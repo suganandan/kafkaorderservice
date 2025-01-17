@@ -7,8 +7,7 @@ import jakarta.persistence.Id;
 import lombok.*;
 
 @Entity
-@Getter
-@Setter
+@Data
 @RequiredArgsConstructor
 public class Product {
     @Id

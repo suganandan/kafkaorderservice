@@ -24,28 +24,19 @@ public class OrdersService {
     private final APIRequestTemplate apiRequestTemplate;
     private final KafkaService kafkaService;
 
-    public Orders createOrder(final Orders orders) {
-        try {
-            if (orders == null || orders.getProductId() == null) {
-                log.error("Invalid order details provided.");
-                throw new IllegalArgumentException("Invalid order details provided.");
-            }
-            Product product = apiRequestTemplate.getProduct(orders.getProductId());
-            if (Objects.isNull(product)) {
-                log.error("No Product Found for the given productId: {}", orders.getProductId());
-                throw new ResourceNotFoundException("No Product Found for the given productId: " + orders.getProductId());
-            }
-            final Orders newOrder = ordersRepository.save(orders);
-            product.setQty(product.getQty() + newOrder.getQuantity());
-            kafkaService.sendProductNotification(product);
-            return newOrder;
-        } catch (IllegalArgumentException | ResourceNotFoundException illegalArgumentException) {
-            log.error("Order creation failed due to invalid input: {}", illegalArgumentException.getMessage());
-            throw new ResourceNotFoundException("Order creation failed due to invalid input: " + illegalArgumentException.getMessage());
-        } catch (Exception exception) {
-            log.error("An unexpected error occurred while creating the order. {}", exception.getMessage());
-            throw new ResourceNotFoundException("An unexpected error occurred while creating the order." + exception.getMessage());
+    public Orders createOrder(Orders orders) throws Exception {
+
+        log.info("Product Id {}", orders.getProductId());
+        Product product = apiRequestTemplate.getProduct(orders.getProductId());
+        if (Objects.isNull(product)) {
+            throw new ResourceNotFoundException("No Product Found for given productId");
         }
+        Orders newOrderObj = ordersRepository.save(orders);
+        product.setQty(product.getQty() + newOrderObj.getQuantity());
+        log.info("Product Details :{} ", product.toString());
+        kafkaService.sendProductNotification(product);
+
+        return newOrderObj;
     }
 
     public Orders fetchOrderById(Long orderId) throws Exception {
