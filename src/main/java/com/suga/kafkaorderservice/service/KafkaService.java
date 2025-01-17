@@ -2,9 +2,9 @@ package com.suga.kafkaorderservice.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.suga.kafkaorderservice.entity.Product;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.NewTopic;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.Message;
@@ -13,24 +13,29 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class KafkaService {
 
-    @Autowired
-    private NewTopic topic;
+    private final NewTopic topic;
 
-    @Autowired
-    private KafkaTemplate<String, String> kafkaTemplate;
+    private final KafkaTemplate<String, String> kafkaTemplate;
 
-    public void sendProductNotification(Product product) throws Exception {
+    public void sendProductNotification(Product product) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            String messageWrite = mapper.writeValueAsString(product);
+            Message<String> message = MessageBuilder
+                    .withPayload(messageWrite)
+                    .setHeader(KafkaHeaders.TOPIC, topic.name())
+                    .build();
 
-        ObjectMapper mapper = new ObjectMapper();
-        String messageWrite = mapper.writeValueAsString(product);
-        Message<String> message = MessageBuilder
-                .withPayload(messageWrite)
-                .setHeader(KafkaHeaders.TOPIC, topic.name())
-                .build();
-        kafkaTemplate.send(message);
-        log.debug("message send");
+            kafkaTemplate.send(message);
+            log.debug("Successfully sent message to Kafka topic: {}", topic.name());
+        } catch (Exception exception) {
+            log.error("Error occurred while sending product notification to Kafka: {}", exception.getMessage(), exception);
+            throw new RuntimeException("Failed to send product notification", exception);
+        }
     }
+
 
 }

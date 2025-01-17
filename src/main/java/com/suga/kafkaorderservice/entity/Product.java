@@ -9,9 +9,7 @@ import lombok.*;
 @Entity
 @Getter
 @Setter
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
+@RequiredArgsConstructor
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
